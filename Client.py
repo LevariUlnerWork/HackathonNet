@@ -19,4 +19,7 @@ def send(msg):
     client.send(send_len)
     client.send(message)
 
+while True:
+    serverMsg = client.recv(100)
+    print serverMsg.decode(FORMAT)
 send("Hello!")
