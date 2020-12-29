@@ -1,6 +1,5 @@
 import socket
-import threading 
-from scapy.all import *
+import threading
 
 
 HEADER_UDP_MAGIC_COOKIE = int('feedbeef',16)
@@ -11,11 +10,15 @@ SERVER_PORT = 2014
 ADDR = (SERVER,SERVER_PORT) 
 FORMAT = 'utf-8'
 
+
 UDPserver = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 UDPserver.bind(ADDR)
 
 def handle_clients_before_game(conn, addr):
-    print(f"Received offer from")
+    print(f"new connection {addr} Received offer from")
+    connected = True
+    while connected:
+        msg_length = conn.recv(HEADER_UDP_MAGIC_COOKIE)
 
 
 def start():
@@ -25,6 +28,7 @@ def start():
         conn, addr = UDPserver.accept()
         thread = threading.Thread(target=handle_clients_before_game, args=(conn,addr))
         thread.start()
+        print(f"Active connction: {threading.activeCount()-1}")
 
-
-# start()
+print("Server started, listening on IP address * ")
+start()
