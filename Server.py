@@ -126,6 +126,7 @@ def start():
                     try:
                         for ip_game in CONN_DICT.keys():
                             conn_player = CONN_DICT[ip_game]
+                            conn_player.settimeout(30) #After that the server move on
                             thread_game = threading.Thread(target=game,args=(ip_game,conn_player,START_GAME_MESSAGE,SCORES))
                             thread_game.start()
                             thread.join(10)
@@ -155,8 +156,7 @@ def start():
                         namesWinnerGroup += name + "\n"
 
                     END_GAME_MESSAGE = f"Game Over! Group 1 typed in {GROUP1SCORE} characters. Group 2 typed in {GROUP2SCORE} characters.\n {winnerGroup} wins!\n \n Congratulations to the winners:\n ==\n{namesWinnerGroup}"
-                    
-                    print("I already here")
+
 
                     for ip_game in CONN_DICT.keys():
                         conn_player = CONN_DICT[ip_game]
@@ -182,8 +182,8 @@ def game(ip_game,conn_player,messageStart,SCORES):
 
         
 def endgame(ip_game,conn_player,messagefinish):
+        time.sleep(2)
         conn_player.send(messagefinish.encode(FORMAT))
-        time.sleep(10)
         conn_player.close()           
     
     

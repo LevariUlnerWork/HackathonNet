@@ -24,7 +24,10 @@ clientUDP.bind(("", 13117))
 #Enable TCP connection:
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    
+def game():
+    while True:
+        key = msvcrt.getch()
+        client.send(bytes(key))
 
 while True:
     print("Client started, listening for offer requests... ")
@@ -39,19 +42,13 @@ while True:
         client.send("Gellers\n".encode(FORMAT))
         data, addr = client.recvfrom(100000)
         print(data.decode(FORMAT))
-        time_stop = time.time() + 10.0
-        print(time.time())
-        print(time_stop)
         try:
-            while True:
-                if(time.time() > time_stop):
-                    print(time)
-                    raise Exception()
-                key = msvcrt.getch()
-                client.send(bytes(key))
+            thread_game = threading.Thread(target=game)
+            thread_game.start()
+            thread_game.join(10)
         except:
             print("Time is over!")
-        data,addr = client.recv(10000)
+        data,addr = client.recvfrom(10000)
         print (data.decode(FORMAT))
         client.close()
         print("Server disconnected, listening for offer requests...")
