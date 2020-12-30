@@ -1,4 +1,7 @@
+import time
 import socket
+import threading
+import msvcrt
 
 HEADER_TCP = 20
 HEADER_UDP = 8
@@ -16,13 +19,13 @@ clientUDP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 # Enable broadcasting mode
 clientUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
+clientUDP.bind(("", 13117))
 
 #Enable TCP connection:
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+    
 
-clientUDP.bind(("", 13117))
 while True:
     print("Client started, listening for offer requests... ")
     data, addr = clientUDP.recvfrom(1024)
@@ -34,17 +37,26 @@ while True:
         print(f"Received offer from {address} , attempting to connect...")
         client.connect(SERVER_ADDR)
         client.send("Gellers\n".encode(FORMAT))
-        client.listen()
-        break
+        data, addr = client.recvfrom(100000)
+        print(data.decode(FORMAT))
+        time_stop = time.time() + 10.0
+        print(time.time())
+        print(time_stop)
+        try:
+            while True:
+                if(time.time() > time_stop):
+                    print(time)
+                    raise Exception()
+                key = msvcrt.getch()
+                client.send(bytes(key))
+        except:
+            print("Time is over!")
+        data,addr = client.recv(10000)
+        print (data.decode(FORMAT))
+        client.close()
+        print("Server disconnected, listening for offer requests...")
+    
 
 
-
-def send(msg):
-    message = msg.encode(FORMAT)
-    msg_len = len(message)
-    send_len = str(msg_len).encode(FORMAT)
-    send_len += b' ' * (HEADER_TCP-len(send_len))
-    client.send(send_len)
-    client.send(message)
 
 # send("Hello!")
