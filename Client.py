@@ -22,7 +22,7 @@ clientUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 clientUDP.bind(("", 13117))
 
 #Enable TCP connection:
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client = None
 
 def game():
     while True:
@@ -38,6 +38,7 @@ while True:
         dest_port = int.from_bytes(data[5:7],"big")
         SERVER_ADDR = (address,dest_port)
         print(f"Received offer from {address} , attempting to connect...")
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client.connect(SERVER_ADDR)
         client.send("Gellers\n".encode(FORMAT))
         data, addr = client.recvfrom(100000)
@@ -51,6 +52,7 @@ while True:
         data,addr = client.recvfrom(10000)
         print (data.decode(FORMAT))
         client.close()
+        client = None
         print("Server disconnected, listening for offer requests...")
     
 
