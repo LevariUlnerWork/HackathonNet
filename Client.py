@@ -12,7 +12,7 @@ diconnect_msg = "disconnect"
 
 
 clientUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) # UDP
-clientUDP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+clientUDP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 # Enable broadcasting mode
 clientUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)

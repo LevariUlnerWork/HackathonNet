@@ -11,27 +11,31 @@ ADDR = (SERVER,SERVER_PORT)
 FORMAT = 'utf-8'
 diconnect_msg = "disconnect"
 
-
-#FOR THE GAME:
-ALL_TIME_TABLE = {}
-GROUP1 = {} # {addr:number of packets}
-GROUP2 = {} # {addr:number of packets}
-
-
-
+#The UDP Connections:
 broadcastServer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 # Enable broadcasting mode
 broadcastServer.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 broadcastServer.settimeout(0.2)
 
+#The TCP Connections:
 TCPserver = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 TCPserver.bind(ADDR)
+
+
+#FOR THE GAME:
+ALL_TIME_TABLE = {} # {Name:Score}
+USERS_PER_GAME = {} # {addr:Name}
+GROUP1 = {} # {Name:number of packets}
+GROUP2 = {} # {Name:number of packets}
+
+
+
 
 def broadcast_message_before_game():
     header = bytes.fromhex('feedbeef') + bytes.fromhex('02') + bytes.fromhex('07de')
     messageBytes = ("Server started, listening on IP address 172.1.0.14").encode(FORMAT)
     broadcast_message = header + messageBytes
-    while True:
+    for i in range(10):
         broadcastServer.sendto(broadcast_message, ('<broadcast>', 13117))
         time.sleep(1)
     
@@ -51,10 +55,12 @@ def broadcast_message_before_game():
 #     conn.close()
 
 def start():
-    broadcastServer.listen()
+    TCPserver.listen()
     print (f"Server started, listening on IP address {SERVER}")
     while True:
-        conn, addr = broadcastServer.accept()
+        conn, addr = TCPserver.accept()
+        data, addr = TCPserver.recv(1024)
+        USERS_PER_GAME[addr] = data.decode(FORMAT).split('\n')[0]
         thread = threading.Thread(target=broadcast_message_before_game, args=(conn,addr))
         thread.start()
         thread.join(10)
@@ -62,6 +68,4 @@ def start():
 
 forever = True
 while forever:
-    isThereAreClients = False
-    while not isThereAreClients:
         start()
