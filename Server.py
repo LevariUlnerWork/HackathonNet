@@ -4,7 +4,7 @@ import time
 
 
 
-SERVER = socket.gethostbyname(socket.gethostname) # Should be 172.l.0.14
+SERVER = socket.gethostbyname(socket.gethostname()) # Should be 172.l.0.14
 BROADCAST_PORT = 13117
 SERVER_PORT = 2014
 ADDR = (SERVER,SERVER_PORT) 
@@ -24,6 +24,7 @@ TCPserver.bind(ADDR)
 
 #FOR THE GAME:
 ALL_TIME_TABLE = {} # {Name:Score}
+ALL_TIME_PLAYED = {}
 USERS_PER_GAME = {} # {addr:Name}
 GROUP1 = {} # {Name:number of packets}
 GROUP2 = {} # {Name:number of packets}
@@ -60,42 +61,44 @@ COLORS: {'Black': '\u001b[30m', \
 
 
 def broadcast_message_before_game():
+    print("sending message")
     header = bytes.fromhex('feedbeef') + bytes.fromhex('02') + bytes.fromhex('07de')
-    messageBytes = ("Server started, listening on IP address 172.1.0.14").encode(FORMAT)
+    messageBytes = ("Server started, listening on IP address 169.254.135.241").encode(FORMAT)
     broadcast_message = header + messageBytes
     for i in range(10):
         broadcastServer.sendto(broadcast_message, ('<broadcast>', 13117))
         time.sleep(1)
     
 
-# def handle_clients_before_game(conn, addr):
-#     print(f"new connection {addr} Received offer from")
-#     connected = True
-#     while connected:
-#         msg_length = conn.recv(HEADER_UDP_MAGIC_COOKIE).decode(FORMAT)
-#         if msg_length:
-#             msg_length = int(msg_length)
-#             msg = conn.recv(msg_length).decode(FORMAT)
-#             if msg == diconnect_msg:
-#                 connected = False
-#             print(f"[{addr}] {msg}")
-#             conn.send("msg recieved".encode(FORMAT))
-#     conn.close()
 
-def start():
+
+def listen():
     TCPserver.listen()
     print (f"Server started, listening on IP address {SERVER}")
-    while True:
-        conn, addr = TCPserver.accept()
-        data, addr = TCPserver.recv(1024)
-        USERS_PER_GAME[addr] = data.decode(FORMAT).split('\n')[0]
-        thread = threading.Thread(target=broadcast_message_before_game, args=(conn,addr))
-        thread.start()
-        thread.join(10)
-
-        print("Game over, sending out offer requests...")
+    conn, addr = TCPserver.accept()
+    data = conn.recv(1024)
+    print(data.decode(FORMAT))
+    USERS_PER_GAME[addr[0]] = data.decode(FORMAT).split('\n')
+    if(addr[0] not in ALL_TIME_PLAYED):
+        ALL_TIME_PLAYED[addr[0]] = 0
+    ALL_TIME_PLAYED[addr[0]] += 1
+    time.sleep(10)
     conn.close()
 
-forever = True
-while forever:
-        start()
+def start():
+    while True:
+            thread = threading.Thread(target=listen)
+            thread2 = threading.Thread(target=broadcast_message_before_game)
+            thread.start()
+            thread2.start()
+            thread.join(10)
+            thread2.join(10)
+            if len(USERS_PER_GAME.keys()) > 0:
+                print("game")
+            else:
+                print("No one joined the game")
+            print(USERS_PER_GAME.keys())
+            print("Game over, sending out offer requests...")
+    
+    
+start()
