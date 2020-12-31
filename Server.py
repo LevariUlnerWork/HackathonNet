@@ -5,7 +5,7 @@ import os
 
 
 
-SERVER = socket.gethostbyname(socket.gethostname()) # Should be 172.l.0.14 - Our hostname
+SERVER = socket.gethostbyname("172.1.0.14") # Should be 172.l.0.14 - Our hostname
 BROADCAST_PORT = 13117
 SERVER_PORT = 2014 #ours
 ADDR = (SERVER,SERVER_PORT) 
@@ -175,6 +175,8 @@ def start():
                 thread_endgame.start()
                 thread.join(1)
             print(COLORS["Reset"]+"Game over, sending out offer requests...")
+        else:
+            print(COLORS["Reset"]+"No game, sending out offer requests...")
         print("The All Time Leader is:")
         for ip in ALL_TIME_PLAYED:
             if ALL_TIME_PLAYED[ip] == max(ALL_TIME_PLAYED.values()):

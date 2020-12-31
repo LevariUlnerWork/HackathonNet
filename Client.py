@@ -2,7 +2,7 @@ import os
 import time
 import socket
 import threading
-import msvcrt
+import getch
 
 #Default:
 PORT = 0
@@ -39,7 +39,8 @@ def start():
         data, addr = clientUDP.recvfrom(1024)
         header = data[:5]
         message = data[7:].decode(FORMAT) #The message
-        address = message.split('address ')[1]
+        print(addr[0])
+        address = addr[0]
         
         #Check the message format:
         if header == bytes.fromhex('feedbeef') + bytes.fromhex('02'):
@@ -61,8 +62,8 @@ def start():
             def game():
                 while True:
                     try:
-                        key = msvcrt.getch()
-                        client.send(key)
+                        key = getch.getch()
+                        client.send(key.encode(FORMAT))
                     except Exception as e:
                         print (e)
                         pass            
