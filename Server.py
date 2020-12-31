@@ -25,6 +25,7 @@ TCPserver.bind(ADDR)
 
 #FOR THE GAME:
 ALL_TIME_PLAYED = {} # {Name:Score}
+MOST_FREQ_KEY = {} #{key:Freq ever}
 
 #SET SCREEN:
 os.system("cls")
@@ -177,11 +178,21 @@ def start():
             print(COLORS["Reset"]+"Game over, sending out offer requests...")
         else:
             print(COLORS["Reset"]+"No game, sending out offer requests...")
-        print("The All Time Leader is:")
+        print("The All Time Leaders are:")
+        best_score = 0
         for ip in ALL_TIME_PLAYED:
             if ALL_TIME_PLAYED[ip] == max(ALL_TIME_PLAYED.values()):
                 print(ip)
-                print(f"with score {ALL_TIME_PLAYED[ip]}")
+                best_score = ALL_TIME_PLAYED[ip] 
+        print(f"with score {best_score}")
+
+        print(f"The most common keys are:")
+        key_score = 0
+        for key in MOST_FREQ_KEY:
+            if MOST_FREQ_KEY[key] == max(MOST_FREQ_KEY.values()):
+                print(key)       
+                key_score = MOST_FREQ_KEY[key] 
+        print(f"they were sent: {key_score} times!")
                 
 
 def game(name,conn_player,messageStart,SCORES):
@@ -191,7 +202,11 @@ def game(name,conn_player,messageStart,SCORES):
 
         start_game_time = time.time()
         while start_game_time + 10 > time.time():
-            conn_player.recvfrom(1024)
+            data,addr = conn_player.recvfrom(1024)
+            key = data.decode(FORMAT)
+            if(key not in MOST_FREQ_KEY.keys()):
+                MOST_FREQ_KEY[key] = 0
+            MOST_FREQ_KEY[key] += 1
             SCORES[name] += 1
     except:
         pass
