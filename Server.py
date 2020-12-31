@@ -1,6 +1,7 @@
 import socket
 import threading
 import time
+import os
 
 
 
@@ -25,7 +26,9 @@ TCPserver.bind(ADDR)
 #FOR THE GAME:
 ALL_TIME_PLAYED = {} # {Name:Score}
 
-COLORS: {'Black': '\u001b[30m', \
+#SET SCREEN:
+os.system("cls")
+COLORS = {'Black': '\u001b[30m', \
 'Red': '\u001b[31m' ,\
 'Green': '\u001b[32m',\
 'Yellow': '\u001b[33m',\
@@ -33,7 +36,7 @@ COLORS: {'Black': '\u001b[30m', \
 'Magenta': '\u001b[35m',\
 'Cyan': '\u001b[36m',\
 'White': '\u001b[37m',\
-'Reset': '\u001b[0m}'}
+'Reset': '\u001b[0m'}
 
 
 
@@ -117,7 +120,7 @@ def start():
                 GROUP1.append(name)
             
             START_GAME_MESSAGE += START_GAME_MESSAGE6
-            print (START_GAME_MESSAGE)
+            print (COLORS["Magenta"] + START_GAME_MESSAGE)
 
             #GAME:
                 
@@ -130,7 +133,7 @@ def start():
                 thread_game = threading.Thread(target=game,args=(name,conn_player,START_GAME_MESSAGE,SCORES))
                 thread_game.start()
                 thread_game.join(10)
-            print("Times up!")    
+            print(COLORS["Red"] + "Times up!")    
             
             time.sleep(2)
             
@@ -165,13 +168,13 @@ def start():
             END_GAME_MESSAGE = f"Game Over! Group 1 typed in {GROUP1SCORE} characters. Group 2 typed in {GROUP2SCORE} characters.\n{winnerGroup} wins!\n \nCongratulations to the winners:\n ==\n{namesWinnerGroup}"
 
             #Send the end message:
-            print(END_GAME_MESSAGE)
+            print(COLORS["Blue"]+END_GAME_MESSAGE)
             for name in CONN_DICT.keys():
                 conn_player = CONN_DICT[name]
                 thread_endgame = threading.Thread(target=endgame,args=(name,conn_player,END_GAME_MESSAGE))
                 thread_endgame.start()
                 thread.join(1)
-            print("Game over, sending out offer requests...")
+            print(COLORS["Reset"]+"Game over, sending out offer requests...")
         print("The All Time Leader is:")
         for ip in ALL_TIME_PLAYED:
             if ALL_TIME_PLAYED[ip] == max(ALL_TIME_PLAYED.values()):

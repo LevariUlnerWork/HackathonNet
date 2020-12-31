@@ -1,18 +1,28 @@
+import os
 import time
 import socket
 import threading
 import msvcrt
 
-HEADER_TCP = 20
-HEADER_UDP = 8
-SERVER_PORT = 0
+#Default:
 PORT = 0
 SERVER_ADDR = 0
 FORMAT = 'utf-8'
-SERVER = socket.gethostbyname(socket.gethostname()) # Should be 172.l.0.14
-ADDR = (SERVER,PORT)
-diconnect_msg = "disconnect"
 
+SERVER = socket.gethostbyname(socket.gethostname()) 
+ADDR = (SERVER,PORT)
+
+#SET SCREEN:
+os.system("cls")
+COLORS = {'Black': '\u001b[30m', \
+'Red': '\u001b[31m' ,\
+'Green': '\u001b[32m',\
+'Yellow': '\u001b[33m',\
+'Blue': '\u001b[34m',\
+'Magenta': '\u001b[35m',\
+'Cyan': '\u001b[36m',\
+'White': '\u001b[37m',\
+'Reset': '\u001b[0m'}
 
 clientUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) # UDP
 clientUDP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -46,7 +56,7 @@ def start():
             
             #Game starts:
             data, addr = client.recvfrom(100000)
-            print(data.decode(FORMAT))
+            print(COLORS["Green"] + data.decode(FORMAT))
 
             def game():
                 while True:
@@ -67,7 +77,7 @@ def start():
                 #Times up!
                 if(t.is_alive()):
                     e.set()
-                    print("Time's Up!")
+                    print(COLORS["Red"]+"Time's Up!")
                 
             except Exception as e:
                 print("Time's Up!")
@@ -75,10 +85,10 @@ def start():
             
             #EndGame:
             data,addr = client.recvfrom(10000)
-            print (data.decode(FORMAT))
+            print (COLORS["Blue"]+data.decode(FORMAT))
             client = None
             
-            print("Server disconnected, listening for offer requests...")
+            print(COLORS["Reset"]+"Server disconnected, listening for offer requests...")
     
 
 
