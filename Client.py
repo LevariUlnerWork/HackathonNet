@@ -21,41 +21,68 @@ clientUDP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 clientUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 clientUDP.bind(("", 13117))
 
-#Enable TCP connection:
-client = None
 
-def game():
+def start():
     while True:
-        key = msvcrt.getch()
-        client.send(bytes(key))
+        #Broadcast:
+        print("Client started, listening for offer requests... ")
+        data, addr = clientUDP.recvfrom(1024)
+        header = data[:5]
+        message = data[7:].decode(FORMAT) #The message
+        address = message.split('address ')[1]
+        
+        #Check the message format:
+        if header == bytes.fromhex('feedbeef') + bytes.fromhex('02'):
+            
+            dest_port = int.from_bytes(data[5:7],"big")
+            SERVER_ADDR = (address,dest_port)
+            
+            print(f"Received offer from {address} , attempting to connect...")
+            
+            #Enable TCP connection:
+            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client.connect(SERVER_ADDR)
+            client.send("Gellers\n".encode(FORMAT))
+            
+            #Game starts:
+            data, addr = client.recvfrom(100000)
+            print(data.decode(FORMAT))
 
-while True:
-    print("Client started, listening for offer requests... ")
-    data, addr = clientUDP.recvfrom(1024)
-    message = data[7:].decode(FORMAT)
-    address = message.split('address ')[1]
-    if((data[:5] == bytes.fromhex('feedbeef') + bytes.fromhex('02'))):
-        dest_port = int.from_bytes(data[5:7],"big")
-        SERVER_ADDR = (address,dest_port)
-        print(f"Received offer from {address} , attempting to connect...")
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect(SERVER_ADDR)
-        client.send("Gellers\n".encode(FORMAT))
-        data, addr = client.recvfrom(100000)
-        print(data.decode(FORMAT))
-        try:
-            thread_game = threading.Thread(target=game)
-            thread_game.start()
-            thread_game.join(10)
-        except:
-            print("Time is over!")
-        data,addr = client.recvfrom(10000)
-        print (data.decode(FORMAT))
-        client.close()
-        client = None
-        print("Server disconnected, listening for offer requests...")
+            def game():
+                while True:
+                    try:
+                        key = msvcrt.getch()
+                        client.send(key)
+                    except Exception as e:
+                        print (e)
+                        pass            
+            
+            try:
+                e = threading.Event()
+                
+                t = threading.Thread(target=game,args=())
+                t.start()
+                t.join(10)
+                
+                #Times up!
+                if(t.is_alive()):
+                    e.set()
+                    print("Time's Up!")
+                
+            except Exception as e:
+                print("Time's Up!")
+                pass
+            
+            #EndGame:
+            data,addr = client.recvfrom(10000)
+            print (data.decode(FORMAT))
+            client = None
+            
+            print("Server disconnected, listening for offer requests...")
     
 
+
+start()
 
 
 # send("Hello!")

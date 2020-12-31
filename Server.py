@@ -4,12 +4,11 @@ import time
 
 
 
-SERVER = socket.gethostbyname(socket.gethostname()) # Should be 172.l.0.14
+SERVER = socket.gethostbyname(socket.gethostname()) # Should be 172.l.0.14 - Our hostname
 BROADCAST_PORT = 13117
-SERVER_PORT = 2014
+SERVER_PORT = 2014 #ours
 ADDR = (SERVER,SERVER_PORT) 
 FORMAT = 'utf-8'
-diconnect_msg = "disconnect"
 
 
 #The UDP Connections:
@@ -24,19 +23,7 @@ TCPserver.bind(ADDR)
 
 
 #FOR THE GAME:
-ALL_TIME_TABLE = {} # {Name:Score}
-ALL_TIME_PLAYED = {}
-
-#GAME TEXTS:
-START_GAME_MESSAGE7 = "Game over!"
-START_GAME_MESSAGE8 = "Group 1 typed in 104 characters. Group 2 typed in 28 characters."
-START_GAME_MESSAGE9 = "Group 1 wins! \n"
-START_GAME_MESSAGE10 = "Congratulations to the winners:"
-START_GAME_MESSAGE11 = "=="
-
-
-
-
+ALL_TIME_PLAYED = {} # {Name:Score}
 
 COLORS: {'Black': '\u001b[30m', \
 'Red': '\u001b[31m' ,\
@@ -64,32 +51,48 @@ def broadcast_message_before_game():
 
 
 def listen(CONN_DICT,USERS_PER_GAME):
-    TCPserver.listen()
-    conn, addr = TCPserver.accept()
-    CONN_DICT[addr[0]] = conn
-    data = conn.recv(1024)
-    USERS_PER_GAME[addr[0]] = data.decode(FORMAT).split('\n')[0]
-    
+    startTime = time.time()
+    while startTime + 10 > time.time():
+        TCPserver.listen()
+        conn, addr = TCPserver.accept()
+        data = conn.recv(1024)
+        playerName = data.decode(FORMAT).split('\n')[0]
+        CONN_DICT[playerName] = conn
+        USERS_PER_GAME[playerName] = addr[0] 
+        
     
 
 def start():
     print (f"Server started, listening on IP address {SERVER}")
-    while True:     
-            
+    
+    while True:            
         try:
-            USERS_PER_GAME = {} # {addr:Name}
-            CONN_DICT={}
-            thread = threading.Thread(target=listen,args = (CONN_DICT,USERS_PER_GAME))
-            thread2 = threading.Thread(target=broadcast_message_before_game)
+            
+            USERS_PER_GAME = {} # {Name: ip}
+            CONN_DICT={} #{name : connection per game}
+            
+            thread = threading.Thread(target=listen,args = (CONN_DICT,USERS_PER_GAME)) #thread per tcp start connection
+            thread2 = threading.Thread(target=broadcast_message_before_game) #thread per broadcasts
             thread.start()
             thread2.start()
             thread.join(10)
             thread2.join(10)
-        except:
-            print("Im here")
+        except Exception as e:
+            print("connection lost")
             continue
 
+
+        #Enter the game:
         if(len(USERS_PER_GAME.keys()) > 0):
+            
+            #Building the game:
+            SCORES = {} #{Name:score}
+            GROUP1 = []
+            GROUP1SCORE = 0
+            GROUP2 = []
+            GROUP2SCORE = 0
+            
+            #Build the message:
             START_GAME_MESSAGE1 = "Welcome to Keyboard Spamming Battle Royale.\n"
             START_GAME_MESSAGE2 = "Group 1:\n"
             START_GAME_MESSAGE3 = "==\n"
@@ -98,69 +101,76 @@ def start():
             START_GAME_MESSAGE6 = "Start pressing keys on your keyboard as fast as you can!!"
             START_GAME_MESSAGE = START_GAME_MESSAGE1 + START_GAME_MESSAGE2 + START_GAME_MESSAGE3
             
-            SCORES = {} #{ip:score}
-            GROUP1 = []
-            GROUP1SCORE = 0
-            GROUP2 = []
-            GROUP2SCORE = 0
             
-            gamePlayersIp = sorted(list((USERS_PER_GAME.keys())))
-            for ipIndex in range (len(gamePlayersIp)//2):
-                ip = gamePlayersIp[ipIndex]
-                START_GAME_MESSAGE += str(USERS_PER_GAME[ip] + "\n")
-                SCORES[ip] = 0
-                GROUP1.append(ip)
+            gamePlayersName = sorted(list((USERS_PER_GAME.keys())))
+            for NameIndex in range (len(gamePlayersName)//2):
+                name = gamePlayersName[NameIndex]
+                START_GAME_MESSAGE += str(name + "\n")
+                SCORES[name] = 0
+                GROUP1.append(name)
     
             START_GAME_MESSAGE += START_GAME_MESSAGE4 + START_GAME_MESSAGE5
-    
-            for ipIndex in range (len(gamePlayersIp)//2,len(gamePlayersIp)):
-                ip = gamePlayersIp[ipIndex]
-                START_GAME_MESSAGE += str(USERS_PER_GAME[ip] + "\n")
-                SCORES[ip] = 0
-                GROUP2.append(ip)
+            for NameIndex in range (len(gamePlayersName)//2,len(gamePlayersName)):
+                name = gamePlayersName[NameIndex]
+                START_GAME_MESSAGE += str(name + "\n")
+                SCORES[name] = 0
+                GROUP1.append(name)
             
-            #GAME:
             START_GAME_MESSAGE += START_GAME_MESSAGE6
-            try:
-                for ip_game in CONN_DICT.keys():
-                    conn_player = CONN_DICT[ip_game]
-                    conn_player.settimeout(30) #After that the server move on
-                    thread_game = threading.Thread(target=game,args=(ip_game,conn_player,START_GAME_MESSAGE,SCORES))
-                    thread_game.start()
-                    thread.join(10)
-            except:
-                print("Times up")    
-            time.sleep(10)
-            #ENDGAME:
+            print (START_GAME_MESSAGE)
+
+            #GAME:
+                
+            for name in CONN_DICT.keys():
+                #Get any user connection:
+                conn_player = CONN_DICT[name]
+                conn_player.settimeout(30) #After that the server move on - raise a time out exception
+                
+                #thread per user:
+                thread_game = threading.Thread(target=game,args=(name,conn_player,START_GAME_MESSAGE,SCORES))
+                thread_game.start()
+                thread_game.join(10)
+            print("Times up!")    
             
-            for ip in SCORES:
-                if (ip in GROUP1):
-                    GROUP1SCORE += SCORES[ip]
+            time.sleep(2)
+            
+            #ENDGAME (you obviously understood the reference):
+            
+            #calculate the scores and save them forever:
+            for name in SCORES:
+                if (name in GROUP1):
+                    GROUP1SCORE += SCORES[name]
                 else:
-                    GROUP2SCORE += SCORES[ip]
-                if(ip not in ALL_TIME_PLAYED.keys() or ALL_TIME_PLAYED [ip] < SCORES[ip]):
-                    ALL_TIME_PLAYED [ip] = SCORES[ip]
+                    GROUP2SCORE += SCORES[name]
+                
+                #Record this player
+                if(name not in ALL_TIME_PLAYED.keys() or ALL_TIME_PLAYED [name] < SCORES[name]):
+                    ALL_TIME_PLAYED [name] = SCORES[name]
+            
+            #Decide the winners:
             if(GROUP1SCORE > GROUP2SCORE):
                 winnerGroup = "Group 1"
             else:
                 winnerGroup = "Group 2"
             
             if(winnerGroup == "Group 1"):
-                winnerNameGroup = [x for x in USERS_PER_GAME if x in GROUP1]
+                winnerNameGroup = [x for x in USERS_PER_GAME.keys() if x in GROUP1]
             else:
-                winnerNameGroup = [x for x in USERS_PER_GAME if x in GROUP2]
+                winnerNameGroup = [x for x in USERS_PER_GAME.keys() if x in GROUP2]
+            
             namesWinnerGroup = ""
             for name in winnerNameGroup:
                 namesWinnerGroup += name + "\n"
 
-            END_GAME_MESSAGE = f"Game Over! Group 1 typed in {GROUP1SCORE} characters. Group 2 typed in {GROUP2SCORE} characters.\n {winnerGroup} wins!\n \n Congratulations to the winners:\n ==\n{namesWinnerGroup}"
+            END_GAME_MESSAGE = f"Game Over! Group 1 typed in {GROUP1SCORE} characters. Group 2 typed in {GROUP2SCORE} characters.\n{winnerGroup} wins!\n \nCongratulations to the winners:\n ==\n{namesWinnerGroup}"
 
-
-            for ip_game in CONN_DICT.keys():
-                conn_player = CONN_DICT[ip_game]
-                thread_endgame = threading.Thread(target=endgame,args=(ip_game,conn_player,END_GAME_MESSAGE))
+            #Send the end message:
+            print(END_GAME_MESSAGE)
+            for name in CONN_DICT.keys():
+                conn_player = CONN_DICT[name]
+                thread_endgame = threading.Thread(target=endgame,args=(name,conn_player,END_GAME_MESSAGE))
                 thread_endgame.start()
-                thread.join()
+                thread.join(1)
             print("Game over, sending out offer requests...")
         print("The All Time Leader is:")
         for ip in ALL_TIME_PLAYED:
@@ -169,20 +179,26 @@ def start():
                 print(f"with score {ALL_TIME_PLAYED[ip]}")
                 
 
-def game(ip_game,conn_player,messageStart,SCORES):
+def game(name,conn_player,messageStart,SCORES):
+    try:
+        #Start Game Message:
         conn_player.send(messageStart.encode(FORMAT))
-        try:
-            while True:
-                conn_player.recv(1024)
-                SCORES[ip_game] += 1
-        except:
-            pass
+
+        start_game_time = time.time()
+        while start_game_time + 10 > time.time():
+            conn_player.recvfrom(1024)
+            SCORES[name] += 1
+    except:
+        pass
 
         
-def endgame(ip_game,conn_player,messagefinish):
-        time.sleep(2)
+def endgame(name, conn_player, messagefinish):
+    try:
         conn_player.send(messagefinish.encode(FORMAT))
-        conn_player.close()           
+        print (f"Connection with {name} close")
+        conn_player.close()
+    except:
+        pass
     
     
 start()
